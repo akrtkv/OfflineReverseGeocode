@@ -27,11 +27,10 @@ THE SOFTWARE.
 package geocode;
 
 import geocode.kdtree.KDNodeComparator;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-import static java.lang.Math.toRadians;
 
 import java.util.Comparator;
+
+import static java.lang.Math.*;
 
 /**
  * Created by Daniel Glasson on 18/05/2014.
@@ -39,21 +38,36 @@ import java.util.Comparator;
  */
 
 public class GeoName extends KDNodeComparator<GeoName> {
+
     public String name;
-    public boolean majorPlace; // Major or minor place
+
+    public String asciiName;
+
+    public String alternateNames;
+
     public double latitude;
+
     public double longitude;
-    public double point[] = new double[3]; // The 3D coordinates of the point
+
+    public boolean majorPlace; // Major or minor place
+
+    public double[] point = new double[3]; // The 3D coordinates of the point
+
     public String country;
+
+    public String timezone;
 
     GeoName(String data) {
         String[] names = data.split("\t");
-        name = names[1];
-        majorPlace = names[6].equals("P");
-        latitude = Double.parseDouble(names[4]);
-        longitude = Double.parseDouble(names[5]);
-        setPoint();
-        country = names[8];
+        this.name = names[1];
+        this.asciiName = names[2];
+        this.alternateNames = names[3];
+        this.latitude = Double.parseDouble(names[4]);
+        this.longitude = Double.parseDouble(names[5]);
+        this.majorPlace = names[6].equals("P");
+        this.setPoint();
+        this.country = names[8];
+        this.timezone = names[17];
     }
 
     GeoName(Double latitude, Double longitude) {
@@ -79,7 +93,7 @@ public class GeoName extends KDNodeComparator<GeoName> {
         double x = this.point[0] - other.point[0];
         double y = this.point[1] - other.point[1];
         double z = this.point[2] - other.point[2];
-        return (x*x) + (y*y) + (z*z);
+        return (x * x) + (y * y) + (z * z);
     }
 
     @Override
@@ -93,7 +107,35 @@ public class GeoName extends KDNodeComparator<GeoName> {
         return GeoNameComparator.values()[axis];
     }
 
-    protected static enum GeoNameComparator implements Comparator<GeoName> {
+    public String getName() {
+        return name;
+    }
+
+    public String getAsciiName() {
+        return asciiName;
+    }
+
+    public String getAlternateNames() {
+        return alternateNames;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    protected enum GeoNameComparator implements Comparator<GeoName> {
         x {
             @Override
             public int compare(GeoName a, GeoName b) {
@@ -111,6 +153,6 @@ public class GeoName extends KDNodeComparator<GeoName> {
             public int compare(GeoName a, GeoName b) {
                 return Double.compare(a.point[2], b.point[2]);
             }
-        };
+        }
     }
 }
