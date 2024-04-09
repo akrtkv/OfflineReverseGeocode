@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Daniel Glasson on 18/05/2014.
@@ -43,28 +44,27 @@ import java.util.ArrayList;
  */
 public class ReverseGeoCode {
 
-    KDTree<GeoName> kdTree;
+    private KDTree<GeoName> kdTree;
 
-    ArrayList<GeoName> arPlaceNames;
+    private final List<GeoName> arPlaceNames = new ArrayList<>();
 
     // Get placenames from http://download.geonames.org/export/dump/
 
     /**
      * Parse the raw text geonames file.
      *
-     * @param placenames the text file downloaded from http://download.geonames.org/export/dump/; can not be null.
+     * @param placeNames the text file downloaded from http://download.geonames.org/export/dump/; can not be null.
      * @param majorOnly  only include major cities in KD-tree.
      * @throws IOException          if there is a problem reading the stream.
      * @throws NullPointerException if zippedPlacenames is {@code null}.
      */
-    public ReverseGeoCode(InputStream placenames, boolean majorOnly) throws IOException {
-        createKdTree(placenames, majorOnly);
+    public ReverseGeoCode(InputStream placeNames, boolean majorOnly) throws IOException {
+        createKdTree(placeNames, majorOnly);
     }
 
-    private void createKdTree(InputStream placenames, boolean majorOnly) throws IOException {
-        arPlaceNames = new ArrayList<GeoName>();
+    private void createKdTree(InputStream placeNames, boolean majorOnly) throws IOException {
         // Read the geonames file in the directory
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(placenames))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(placeNames))) {
             String str;
             while ((str = in.readLine()) != null) {
                 GeoName newPlace = new GeoName(str);
@@ -73,11 +73,15 @@ public class ReverseGeoCode {
                 }
             }
         }
-        kdTree = new KDTree<GeoName>(arPlaceNames);
+        kdTree = new KDTree<>(arPlaceNames);
     }
 
     public GeoName nearestPlace(double latitude, double longitude) {
         return kdTree.findNearest(new GeoName(latitude, longitude));
+    }
+
+    public List<GeoName> getArPlaceNames() {
+        return arPlaceNames;
     }
 
     public GeoName getByCityName(String cityName) {
@@ -96,20 +100,16 @@ public class ReverseGeoCode {
         if (str != null && searchStr != null) {
             int len = searchStr.length();
             int max = str.length() - len;
-
             for (int i = 0; i <= max; ++i) {
-                if (regionMatches(str, true, i, searchStr, 0, len)) {
+                if (regionMatches(str, i, searchStr, len)) {
                     return true;
                 }
             }
-
-            return false;
-        } else {
-            return false;
         }
+        return false;
     }
 
-    private boolean regionMatches(CharSequence cs, boolean ignoreCase, int thisStart, CharSequence substring, int start, int length) {
-        return cs instanceof String && substring instanceof String ? ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length) : cs.toString().regionMatches(ignoreCase, thisStart, substring.toString(), start, length);
+    private boolean regionMatches(CharSequence cs, int thisStart, CharSequence substring, int length) {
+        return cs instanceof String && substring instanceof String ? ((String) cs).regionMatches(true, thisStart, (String) substring, 0, length) : cs.toString().regionMatches(true, thisStart, substring.toString(), 0, length);
     }
 }
